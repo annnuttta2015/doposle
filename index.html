@@ -1,672 +1,466 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Прототип счётчика крестиков</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f1f8;
-      color: #2f2340;
-    }
-    .wrap {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-    h1 {
-      margin: 0 0 10px;
-      font-size: 28px;
-    }
-    .note {
-      margin: 0 0 18px;
-      background: #fff;
-      border-radius: 14px;
-      padding: 12px 14px;
-      line-height: 1.45;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-    }
-    .panel {
-      background: #fff;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 14px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-    }
-    .grid {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      align-items: end;
-    }
-    label {
-      display: block;
-      font-size: 14px;
-      margin-bottom: 4px;
-      font-weight: 700;
-    }
-    input[type="file"],
-    input[type="range"],
-    button {
-      width: 100%;
-    }
-    input[type="file"] {
-      padding: 8px;
-      border: 1px solid #d9cde8;
-      border-radius: 10px;
-      background: #faf7fd;
-    }
-    button {
-      border: 0;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      background: #7e57c2;
-      color: #fff;
-    }
-    button:disabled {
-      background: #b9a9d8;
-      cursor: not-allowed;
-    }
-    .secondary {
-      background: #ede7f6;
-      color: #4a3570;
-    }
-    .small {
-      font-size: 13px;
-      color: #625174;
-      margin-top: 6px;
-    }
-    .slider-line {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .slider-value {
-      min-width: 52px;
-      text-align: right;
-      font-weight: 700;
-      color: #5d3f96;
-    }
-    canvas {
-      width: 100%;
-      max-width: 100%;
-      border-radius: 14px;
-      background: #ffffff;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-      display: block;
-    }
-    .status, .result {
-      margin-top: 12px;
-      background: #fff;
-      border-radius: 14px;
-      padding: 12px 14px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-      line-height: 1.45;
-    }
-    .result strong {
-      font-size: 20px;
-      color: #6a1b9a;
-    }
-    .steps {
-      margin: 0;
-      padding-left: 18px;
-    }
-    .steps li { margin-bottom: 6px; }
-    .chip {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: #efe7fa;
-      color: #5d3f96;
-      font-size: 12px;
-      font-weight: 700;
-      margin-right: 6px;
-      margin-bottom: 6px;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Счётчик крестиков v2</title>
+<style>
+  :root{
+    --bg:#f5f1f8; --card:#fff; --text:#30243d; --muted:#756982;
+    --accent:#7651b5; --accent2:#efe8f8; --ok:#2f7d57; --warn:#a85b2c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+  .wrap{max-width:920px;margin:auto;padding:14px}
+  h1{font-size:26px;margin:4px 0 6px}
+  .sub{color:var(--muted);font-size:14px;line-height:1.4;margin-bottom:14px}
+  .card{background:var(--card);border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 4px 18px rgba(58,38,78,.07)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  label{font-weight:700;font-size:14px;display:block;margin-bottom:6px}
+  input[type=file]{width:100%;background:#faf8fc;border:1px solid #ddd3e8;border-radius:12px;padding:9px}
+  button{width:100%;border:0;border-radius:13px;padding:13px 14px;font-size:15px;font-weight:800;background:var(--accent);color:white}
+  button.secondary{background:var(--accent2);color:#523779}
+  button:disabled{opacity:.45}
+  .status{font-size:14px;line-height:1.45}
+  .status b{color:var(--accent)}
+  .result{text-align:center;padding:18px}
+  .big{font-size:44px;font-weight:900;color:var(--accent);line-height:1}
+  .small{font-size:12px;color:var(--muted);line-height:1.4;margin-top:6px}
+  .canvasWrap{position:relative;overflow:hidden;border-radius:16px;background:#ddd}
+  canvas{display:block;width:100%;height:auto;touch-action:none}
+  .controls{display:grid;grid-template-columns:1fr;gap:12px}
+  .rangeLine{display:grid;grid-template-columns:1fr 54px;gap:10px;align-items:center}
+  input[type=range]{width:100%}
+  .val{text-align:right;font-weight:800;color:var(--accent)}
+  .pill{display:inline-block;background:var(--accent2);color:#5b3f83;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800;margin-right:5px}
+  .hidden{display:none!important}
+  .ok{color:var(--ok);font-weight:800}
+  .warn{color:var(--warn);font-weight:800}
+  .stepTitle{font-weight:900;margin-bottom:5px}
+</style>
+<script>
+var Module = {
+  onRuntimeInitialized: function() {
+    window.cvReady = true;
+    const el = document.getElementById('cvState');
+    if (el) el.innerHTML = '<span class="ok">✓ Модуль автосовмещения загружен</span>';
+    updateButtons();
+  }
+};
+</script>
+<script async src="https://docs.opencv.org/4.x/opencv.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <h1>🪡 Прототип счётчика крестиков</h1>
+<div class="wrap">
+  <h1>🪡 Счётчик крестиков <span class="pill">v2</span></h1>
+  <div class="sub">
+    Сначала автоматически совмещает фото по деталям вышивки и исправляет небольшой наклон/перспективу.
+    Только после этого ищет новые стежки.
+  </div>
 
-    <div class="note">
-      <div><span class="chip">MVP</span><span class="chip">HTML + JS</span><span class="chip">Без сервера</span></div>
-      <p>
-        Это первая пробная версия. Она не “узнаёт крестики магически”, а сравнивает два фото
-        по сетке. Лучше всего снимать один и тот же участок, примерно с того же расстояния и ракурса.
-      </p>
-      <ol class="steps">
-        <li>Загрузи фото <b>ДО</b> и <b>ПОСЛЕ</b>.</li>
-        <li>Нажми <b>«Выбрать калибровку 10×10»</b>.</li>
-        <li>На фото <b>ДО</b> кликни сначала по верхнему левому углу участка 10×10 крестиков, потом по нижнему правому.</li>
-        <li>Если фото ПОСЛЕ немного съехало — подвинь его ползунками X/Y.</li>
-        <li>Нажми <b>«Посчитать»</b>.</li>
-      </ol>
-      <p class="small">
-        Красным подсвечиваются клетки, которые программа считает изменившимися.
-      </p>
-    </div>
-
-    <div class="panel">
-      <div class="grid">
-        <div>
-          <label for="beforeInput">Фото ДО</label>
-          <input type="file" id="beforeInput" accept="image/*">
-        </div>
-        <div>
-          <label for="afterInput">Фото ПОСЛЕ</label>
-          <input type="file" id="afterInput" accept="image/*">
-        </div>
-        <div>
-          <button id="calibrateBtn" disabled>1) Выбрать калибровку 10×10</button>
-        </div>
-        <div>
-          <button id="countBtn" disabled>2) Посчитать</button>
-        </div>
+  <div class="card">
+    <div class="stepTitle">1. Загрузи два фото</div>
+    <div class="grid">
+      <div>
+        <label>Фото ДО</label>
+        <input id="beforeFile" type="file" accept="image/*">
+      </div>
+      <div>
+        <label>Фото ПОСЛЕ</label>
+        <input id="afterFile" type="file" accept="image/*">
       </div>
     </div>
+    <div id="cvState" class="small">Загружается модуль автосовмещения…</div>
+  </div>
 
-    <div class="panel">
-      <div class="grid">
-        <div>
-          <label for="offsetX">Смещение ПОСЛЕ по X</label>
-          <div class="slider-line">
-            <input type="range" id="offsetX" min="-150" max="150" value="0" step="1">
-            <div class="slider-value" id="offsetXVal">0</div>
-          </div>
+  <div class="card">
+    <div class="stepTitle">2. Автоматически совмести фото</div>
+    <button id="alignBtn" disabled>✨ Автосовмещение</button>
+    <div id="alignInfo" class="small">Кнопка станет активной после загрузки двух фото.</div>
+  </div>
+
+  <div class="card">
+    <div class="stepTitle">3. Задай размер крестика</div>
+    <div class="small" style="margin-bottom:10px">
+      Нажми кнопку, затем на фото отметь <b>два угла участка ровно 10×10 крестиков</b>:
+      сначала верхний левый, затем нижний правый. На равномерке считаем именно крестики, а не нити ткани.
+    </div>
+    <button id="calBtn" class="secondary" disabled>▦ Выбрать участок 10×10</button>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <div>
+        <label>Чувствительность к изменению цвета</label>
+        <div class="rangeLine">
+          <input id="chroma" type="range" min="5" max="30" value="12" step="1">
+          <div id="chromaVal" class="val">12</div>
         </div>
-        <div>
-          <label for="offsetY">Смещение ПОСЛЕ по Y</label>
-          <div class="slider-line">
-            <input type="range" id="offsetY" min="-150" max="150" value="0" step="1">
-            <div class="slider-value" id="offsetYVal">0</div>
-          </div>
-        </div>
-        <div>
-          <label for="threshold">Порог чувствительности</label>
-          <div class="slider-line">
-            <input type="range" id="threshold" min="5" max="120" value="28" step="1">
-            <div class="slider-value" id="thresholdVal">28</div>
-          </div>
-          <div class="small">Если считает лишнее — увеличь. Если пропускает — уменьши.</div>
-        </div>
-        <div>
-          <button id="resetBtn" class="secondary">Сбросить калибровку / подсветку</button>
-        </div>
+        <div class="small">12 — хороший старт. Больше = меньше ложных срабатываний.</div>
       </div>
-    </div>
-
-    <canvas id="mainCanvas" width="900" height="600"></canvas>
-
-    <div class="status" id="status">
-      Статус: загрузи два фото, чтобы начать.
-    </div>
-
-    <div class="result" id="result">
-      Результат: пока ничего не посчитано.
+      <div>
+        <label>Сколько клетки должно реально измениться</label>
+        <div class="rangeLine">
+          <input id="coverage" type="range" min="5" max="65" value="18" step="1">
+          <div id="coverageVal" class="val">18%</div>
+        </div>
+        <div class="small">Отсекает единичный шум и небольшие блики.</div>
+      </div>
+      <button id="countBtn" disabled>🧮 Посчитать новые крестики</button>
     </div>
   </div>
 
-  <script>
-    const beforeInput = document.getElementById('beforeInput');
-    const afterInput = document.getElementById('afterInput');
-    const calibrateBtn = document.getElementById('calibrateBtn');
-    const countBtn = document.getElementById('countBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const offsetXInput = document.getElementById('offsetX');
-    const offsetYInput = document.getElementById('offsetY');
-    const thresholdInput = document.getElementById('threshold');
-    const offsetXVal = document.getElementById('offsetXVal');
-    const offsetYVal = document.getElementById('offsetYVal');
-    const thresholdVal = document.getElementById('thresholdVal');
-    const statusEl = document.getElementById('status');
-    const resultEl = document.getElementById('result');
+  <div class="card">
+    <div class="canvasWrap">
+      <canvas id="view" width="900" height="1200"></canvas>
+    </div>
+    <div id="status" class="status" style="margin-top:10px">Загрузи фото ДО и ПОСЛЕ.</div>
+  </div>
 
-    const canvas = document.getElementById('mainCanvas');
-    const ctx = canvas.getContext('2d');
+  <div id="resultCard" class="card result hidden">
+    <div class="small">Найдено новых крестиков</div>
+    <div id="result" class="big">0</div>
+    <div id="resultNote" class="small"></div>
+  </div>
 
-    const beforeCanvas = document.createElement('canvas');
-    const afterCanvas = document.createElement('canvas');
-    const beforeCtx = beforeCanvas.getContext('2d');
-    const afterCtx = afterCanvas.getContext('2d');
+  <!-- скрытые рабочие canvas -->
+  <canvas id="beforeCanvas" class="hidden"></canvas>
+  <canvas id="afterCanvas" class="hidden"></canvas>
+  <canvas id="alignedCanvas" class="hidden"></canvas>
+</div>
 
-    let beforeImg = null;
-    let afterImg = null;
+<script>
+const MAX_SIDE = 1400;
+let beforeImg=null, afterImg=null;
+let aligned=false, aligning=false;
+let selecting=false, pts=[];
+let cellW=null, cellH=null, originX=null, originY=null;
+let changedCells=[];
 
-    let selectingCalibration = false;
-    let calibrationPoints = [];
-    let cellW = null;
-    let cellH = null;
-    let gridOriginX = null;
-    let gridOriginY = null;
+const beforeFile=document.getElementById('beforeFile');
+const afterFile=document.getElementById('afterFile');
+const alignBtn=document.getElementById('alignBtn');
+const calBtn=document.getElementById('calBtn');
+const countBtn=document.getElementById('countBtn');
+const view=document.getElementById('view');
+const vctx=view.getContext('2d',{willReadFrequently:true});
+const beforeCanvas=document.getElementById('beforeCanvas');
+const afterCanvas=document.getElementById('afterCanvas');
+const alignedCanvas=document.getElementById('alignedCanvas');
+const bctx=beforeCanvas.getContext('2d',{willReadFrequently:true});
+const actx=afterCanvas.getContext('2d',{willReadFrequently:true});
+const alctx=alignedCanvas.getContext('2d',{willReadFrequently:true});
+const status=document.getElementById('status');
+const alignInfo=document.getElementById('alignInfo');
+const resultCard=document.getElementById('resultCard');
+const result=document.getElementById('result');
+const resultNote=document.getElementById('resultNote');
+const chroma=document.getElementById('chroma');
+const coverage=document.getElementById('coverage');
 
-    let offsetX = 0;
-    let offsetY = 0;
-    let threshold = 28;
+window.cvReady=false;
 
-    let changedCells = [];
+function updateButtons(){
+  alignBtn.disabled=!(beforeImg && afterImg && window.cvReady) || aligning;
+  calBtn.disabled=!aligned;
+  countBtn.disabled=!(aligned && cellW && cellH);
+}
+function say(t){status.innerHTML=t}
+function loadFile(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const im=new Image();
+      im.onload=()=>resolve(im);
+      im.onerror=reject;
+      im.src=r.result;
+    };
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+function fitSize(w,h){
+  const s=Math.min(1,MAX_SIDE/Math.max(w,h));
+  return [Math.round(w*s),Math.round(h*s)];
+}
+function prepare(){
+  if(!beforeImg || !afterImg) return;
+  // Оба фото приводим к размеру фото ДО. Автосовмещение исправит масштаб/наклон.
+  const [w,h]=fitSize(beforeImg.naturalWidth,beforeImg.naturalHeight);
+  beforeCanvas.width=afterCanvas.width=alignedCanvas.width=view.width=w;
+  beforeCanvas.height=afterCanvas.height=alignedCanvas.height=view.height=h;
 
-    function setStatus(text) {
-      statusEl.textContent = 'Статус: ' + text;
+  bctx.clearRect(0,0,w,h);
+  bctx.drawImage(beforeImg,0,0,w,h);
+
+  actx.clearRect(0,0,w,h);
+  actx.drawImage(afterImg,0,0,w,h);
+
+  aligned=false; selecting=false; pts=[]; changedCells=[];
+  cellW=cellH=originX=originY=null;
+  resultCard.classList.add('hidden');
+  render(false);
+  say('Фото загружены. Теперь нажми <b>«Автосовмещение»</b>.');
+  updateButtons();
+}
+beforeFile.addEventListener('change',async e=>{
+  if(e.target.files[0]){beforeImg=await loadFile(e.target.files[0]);prepare();}
+});
+afterFile.addEventListener('change',async e=>{
+  if(e.target.files[0]){afterImg=await loadFile(e.target.files[0]);prepare();}
+});
+
+function render(showAligned=true){
+  vctx.clearRect(0,0,view.width,view.height);
+  vctx.drawImage(beforeCanvas,0,0);
+  if(showAligned && aligned){
+    vctx.save();
+    vctx.globalAlpha=.34;
+    vctx.drawImage(alignedCanvas,0,0);
+    vctx.restore();
+  }
+  if(pts.length){
+    vctx.save();
+    vctx.fillStyle='#ff9f1c';
+    for(const p of pts){
+      vctx.beginPath();vctx.arc(p.x,p.y,Math.max(5,view.width/160),0,Math.PI*2);vctx.fill();
     }
-
-    function setResult(html) {
-      resultEl.innerHTML = html;
+    if(pts.length===2){
+      const p1=pts[0],p2=pts[1];
+      vctx.strokeStyle='#ff9f1c';vctx.lineWidth=Math.max(2,view.width/500);
+      vctx.setLineDash([10,7]);
+      vctx.strokeRect(Math.min(p1.x,p2.x),Math.min(p1.y,p2.y),Math.abs(p2.x-p1.x),Math.abs(p2.y-p1.y));
+      vctx.setLineDash([]);
     }
+    vctx.restore();
+  }
+  drawGrid();
+  drawChanges();
+}
+function drawGrid(){
+  if(!cellW||!cellH)return;
+  let sx=originX; while(sx>0)sx-=cellW;
+  let sy=originY; while(sy>0)sy-=cellH;
+  vctx.save();
+  vctx.strokeStyle='rgba(0,220,220,.35)';
+  vctx.lineWidth=1;
+  for(let x=sx;x<=view.width;x+=cellW){vctx.beginPath();vctx.moveTo(x,0);vctx.lineTo(x,view.height);vctx.stroke();}
+  for(let y=sy;y<=view.height;y+=cellH){vctx.beginPath();vctx.moveTo(0,y);vctx.lineTo(view.width,y);vctx.stroke();}
+  vctx.restore();
+}
+function drawChanges(){
+  if(!changedCells.length)return;
+  vctx.save();
+  vctx.fillStyle='rgba(255,52,67,.28)';
+  vctx.strokeStyle='rgba(220,25,40,.8)';
+  vctx.lineWidth=1;
+  for(const c of changedCells){
+    vctx.fillRect(c.x,c.y,c.w,c.h);
+    vctx.strokeRect(c.x,c.y,c.w,c.h);
+  }
+  vctx.restore();
+}
 
-    function loadImageFromFile(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = reader.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
+alignBtn.addEventListener('click',autoAlign);
 
-    function drawToOffscreen(img, targetW, targetH, targetCanvas, targetCtx) {
-      targetCanvas.width = targetW;
-      targetCanvas.height = targetH;
-      targetCtx.clearRect(0, 0, targetW, targetH);
-      targetCtx.drawImage(img, 0, 0, targetW, targetH);
-    }
+async function autoAlign(){
+  if(!window.cvReady || !beforeImg || !afterImg || aligning)return;
+  aligning=true;updateButtons();
+  alignBtn.textContent='Совмещаю…';
+  say('Ищу одинаковые детали на двух фото…');
 
-    function prepareImages() {
-      if (!beforeImg || !afterImg) return;
+  let before=null,after=null,g1=null,g2=null,orb=null,kp1=null,kp2=null,d1=null,d2=null;
+  let matcher=null,matches=null,srcPts=null,dstPts=null,H=null,warped=null;
+  try{
+    before=cv.imread(beforeCanvas);
+    after=cv.imread(afterCanvas);
+    g1=new cv.Mat(); g2=new cv.Mat();
+    cv.cvtColor(before,g1,cv.COLOR_RGBA2GRAY);
+    cv.cvtColor(after,g2,cv.COLOR_RGBA2GRAY);
 
-      const w = Math.min(beforeImg.naturalWidth, afterImg.naturalWidth, 1400);
-      const h = Math.min(beforeImg.naturalHeight, afterImg.naturalHeight, 1400);
+    orb=new cv.ORB(5000);
+    kp1=new cv.KeyPointVector(); kp2=new cv.KeyPointVector();
+    d1=new cv.Mat(); d2=new cv.Mat();
+    const noMask=new cv.Mat();
+    orb.detectAndCompute(g1,noMask,kp1,d1);
+    orb.detectAndCompute(g2,noMask,kp2,d2);
+    noMask.delete();
 
-      drawToOffscreen(beforeImg, w, h, beforeCanvas, beforeCtx);
-      drawToOffscreen(afterImg, w, h, afterCanvas, afterCtx);
+    if(d1.empty() || d2.empty()) throw new Error('Не удалось найти достаточно деталей на фото.');
 
-      canvas.width = w;
-      canvas.height = h;
+    matcher=new cv.BFMatcher(cv.NORM_HAMMING,false);
+    matches=new cv.DMatchVectorVector();
+    // query = ПОСЛЕ, train = ДО => матрица сразу переводит ПОСЛЕ в координаты ДО
+    matcher.knnMatch(d2,d1,matches,2);
 
-      calibrateBtn.disabled = false;
-      render();
-      setStatus('Фото загружены. Нажми «Выбрать калибровку 10×10».');
-    }
-
-    function drawPoint(x, y, color = '#ff9800') {
-      ctx.save();
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x, y, 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function getGridStart(origin, step) {
-      let start = origin;
-      while (start > 0) start -= step;
-      return start;
-    }
-
-    function drawGrid() {
-      if (!cellW || !cellH || gridOriginX == null || gridOriginY == null) return;
-
-      const startX = getGridStart(gridOriginX, cellW);
-      const startY = getGridStart(gridOriginY, cellH);
-
-      ctx.save();
-      ctx.strokeStyle = 'rgba(0, 255, 255, 0.35)';
-      ctx.lineWidth = 1;
-
-      for (let x = startX; x <= canvas.width; x += cellW) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-
-      for (let y = startY; y <= canvas.height; y += cellH) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
-
-      ctx.restore();
-    }
-
-    function drawChangedCells() {
-      if (!changedCells.length) return;
-      ctx.save();
-      ctx.fillStyle = 'rgba(255, 60, 60, 0.32)';
-      ctx.strokeStyle = 'rgba(200, 0, 0, 0.75)';
-      ctx.lineWidth = 1;
-      for (const cell of changedCells) {
-        ctx.fillRect(cell.x, cell.y, cell.w, cell.h);
-        ctx.strokeRect(cell.x, cell.y, cell.w, cell.h);
-      }
-      ctx.restore();
-    }
-
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (beforeCanvas.width) {
-        ctx.drawImage(beforeCanvas, 0, 0);
-      }
-
-      if (afterCanvas.width) {
-        ctx.save();
-        ctx.globalAlpha = 0.45;
-        ctx.drawImage(afterCanvas, offsetX, offsetY);
-        ctx.restore();
-      }
-
-      if (calibrationPoints.length === 1) {
-        drawPoint(calibrationPoints[0].x, calibrationPoints[0].y);
-      }
-
-      if (calibrationPoints.length === 2) {
-        const p1 = calibrationPoints[0];
-        const p2 = calibrationPoints[1];
-        const left = Math.min(p1.x, p2.x);
-        const top = Math.min(p1.y, p2.y);
-        const width = Math.abs(p2.x - p1.x);
-        const height = Math.abs(p2.y - p1.y);
-
-        ctx.save();
-        ctx.strokeStyle = '#ff9800';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([8, 6]);
-        ctx.strokeRect(left, top, width, height);
-        ctx.restore();
-
-        drawPoint(p1.x, p1.y);
-        drawPoint(p2.x, p2.y);
-      }
-
-      drawGrid();
-      drawChangedCells();
-    }
-
-    function canvasToImageCoords(event) {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-
-      return {
-        x: (event.clientX - rect.left) * scaleX,
-        y: (event.clientY - rect.top) * scaleY
-      };
-    }
-
-    function getAverageColor(data, w, h, x, y, areaW, areaH) {
-      const x0 = Math.max(0, Math.floor(x));
-      const y0 = Math.max(0, Math.floor(y));
-      const x1 = Math.min(w, Math.ceil(x + areaW));
-      const y1 = Math.min(h, Math.ceil(y + areaH));
-
-      let r = 0, g = 0, b = 0, n = 0;
-
-      for (let j = y0; j < y1; j++) {
-        let idx = (j * w + x0) * 4;
-        for (let i = x0; i < x1; i++) {
-          r += data[idx];
-          g += data[idx + 1];
-          b += data[idx + 2];
-          n++;
-          idx += 4;
+    const src=[],dst=[];
+    for(let i=0;i<matches.size();i++){
+      const pair=matches.get(i);
+      if(pair.size()>=2){
+        const m=pair.get(0), n=pair.get(1);
+        if(m.distance < 0.72*n.distance){
+          const pAfter=kp2.get(m.queryIdx).pt;
+          const pBefore=kp1.get(m.trainIdx).pt;
+          src.push(pAfter.x,pAfter.y);
+          dst.push(pBefore.x,pBefore.y);
         }
       }
-
-      if (!n) return null;
-
-      return {
-        r: r / n,
-        g: g / n,
-        b: b / n
-      };
+      pair.delete();
     }
+    if(src.length/2 < 18) throw new Error('Нашлось слишком мало надёжных совпадений. Попробуй фото с большим общим участком вышивки.');
 
-    function getGrayMeanOnOverlap(beforeData, afterData, w, h, overlap, offsetX, offsetY) {
-      let sumBefore = 0;
-      let sumAfter = 0;
-      let n = 0;
-      const step = 8;
+    srcPts=cv.matFromArray(src.length/2,1,cv.CV_32FC2,src);
+    dstPts=cv.matFromArray(dst.length/2,1,cv.CV_32FC2,dst);
+    H=cv.findHomography(srcPts,dstPts,cv.RANSAC,4.0);
+    if(H.empty()) throw new Error('Не получилось вычислить перспективу.');
 
-      for (let y = overlap.y0; y < overlap.y1; y += step) {
-        for (let x = overlap.x0; x < overlap.x1; x += step) {
-          const ax = x - offsetX;
-          const ay = y - offsetY;
+    warped=new cv.Mat();
+    const size=new cv.Size(before.cols,before.rows);
+    cv.warpPerspective(after,warped,H,size,cv.INTER_LINEAR,cv.BORDER_CONSTANT,new cv.Scalar(0,0,0,0));
+    cv.imshow(alignedCanvas,warped);
 
-          const bIdx = (Math.floor(y) * w + Math.floor(x)) * 4;
-          const aIdx = (Math.floor(ay) * w + Math.floor(ax)) * 4;
-
-          const br = beforeData[bIdx], bg = beforeData[bIdx + 1], bb = beforeData[bIdx + 2];
-          const ar = afterData[aIdx], ag = afterData[aIdx + 1], ab = afterData[aIdx + 2];
-
-          const bGray = 0.299 * br + 0.587 * bg + 0.114 * bb;
-          const aGray = 0.299 * ar + 0.587 * ag + 0.114 * ab;
-
-          sumBefore += bGray;
-          sumAfter += aGray;
-          n++;
-        }
-      }
-
-      if (!n) return { beforeMean: 1, afterMean: 1 };
-      return {
-        beforeMean: sumBefore / n,
-        afterMean: sumAfter / n
-      };
+    aligned=true;changedCells=[];pts=[];
+    cellW=cellH=originX=originY=null;
+    render(true);
+    alignInfo.innerHTML='<span class="ok">✓ Фото автоматически совмещены.</span> Если контуры выглядят почти едиными — всё хорошо.';
+    say('Готово. Полупрозрачное фото ПОСЛЕ наложено на ДО. Теперь задай <b>10×10 крестиков</b>.');
+  }catch(err){
+    console.error(err);
+    aligned=false;
+    say('<span class="warn">Не удалось автоматически совместить:</span> '+(err.message||err));
+    alignInfo.textContent='Попробуй снять оба фото с более похожего ракурса и чтобы на них был большой общий участок.';
+  }finally{
+    for(const m of [before,after,g1,g2,d1,d2,srcPts,dstPts,H,warped]){
+      try{if(m)m.delete()}catch(e){}
     }
+    try{if(kp1)kp1.delete()}catch(e){}
+    try{if(kp2)kp2.delete()}catch(e){}
+    try{if(orb)orb.delete()}catch(e){}
+    try{if(matcher)matcher.delete()}catch(e){}
+    try{if(matches)matches.delete()}catch(e){}
+    aligning=false;
+    alignBtn.textContent='✨ Автосовмещение';
+    updateButtons();
+  }
+}
 
-    function countChanges() {
-      if (!cellW || !cellH || gridOriginX == null || gridOriginY == null) {
-        setStatus('Сначала задай калибровку 10×10.');
-        return;
-      }
+calBtn.addEventListener('click',()=>{
+  if(!aligned)return;
+  selecting=true;pts=[];changedCells=[];
+  cellW=cellH=originX=originY=null;
+  resultCard.classList.add('hidden');
+  say('Отметь на фото <b>верхний левый</b> и <b>нижний правый</b> угол участка ровно 10×10 крестиков.');
+  render(true);updateButtons();
+});
 
-      const w = beforeCanvas.width;
-      const h = beforeCanvas.height;
+function eventPoint(e){
+  const r=view.getBoundingClientRect();
+  const x=(e.clientX-r.left)*view.width/r.width;
+  const y=(e.clientY-r.top)*view.height/r.height;
+  return{x,y};
+}
+view.addEventListener('pointerup',e=>{
+  if(!selecting)return;
+  pts.push(eventPoint(e));
+  if(pts.length===2){
+    const a=pts[0],b=pts[1];
+    const left=Math.min(a.x,b.x), top=Math.min(a.y,b.y);
+    cellW=Math.abs(b.x-a.x)/10;
+    cellH=Math.abs(b.y-a.y)/10;
+    originX=left;originY=top;
+    selecting=false;
+    if(cellW<4||cellH<4){
+      cellW=cellH=originX=originY=null;pts=[];
+      say('<span class="warn">Область слишком маленькая.</span> Выбери 10×10 ещё раз.');
+    }else{
+      say('Калибровка готова: один крестик ≈ <b>'+cellW.toFixed(1)+' × '+cellH.toFixed(1)+' px</b>. Теперь можно считать.');
+    }
+  }
+  render(true);updateButtons();
+});
 
-      const overlap = {
-        x0: Math.max(0, offsetX),
-        y0: Math.max(0, offsetY),
-        x1: Math.min(w, w + offsetX),
-        y1: Math.min(h, h + offsetY)
-      };
+chroma.addEventListener('input',()=>document.getElementById('chromaVal').textContent=chroma.value);
+coverage.addEventListener('input',()=>document.getElementById('coverageVal').textContent=coverage.value+'%');
 
-      if (overlap.x1 <= overlap.x0 || overlap.y1 <= overlap.y0) {
-        setStatus('После смещения изображения не пересекаются. Подправь X/Y.');
-        return;
-      }
+countBtn.addEventListener('click',countChanges);
 
-      const beforeData = beforeCtx.getImageData(0, 0, w, h).data;
-      const afterData = afterCtx.getImageData(0, 0, w, h).data;
+function countChanges(){
+  if(!aligned||!cellW||!cellH)return;
+  say('Сравниваю клетки после автосовмещения…');
+  changedCells=[];
 
-      const grayMeans = getGrayMeanOnOverlap(beforeData, afterData, w, h, overlap, offsetX, offsetY);
-      const brightnessScale = grayMeans.afterMean ? (grayMeans.beforeMean / grayMeans.afterMean) : 1;
+  let b=null,a=null,brgb=null,argb=null,blab=null,alab=null;
+  try{
+    b=cv.imread(beforeCanvas);
+    a=cv.imread(alignedCanvas);
+    brgb=new cv.Mat(); argb=new cv.Mat(); blab=new cv.Mat(); alab=new cv.Mat();
+    cv.cvtColor(b,brgb,cv.COLOR_RGBA2RGB);
+    cv.cvtColor(a,argb,cv.COLOR_RGBA2RGB);
+    cv.cvtColor(brgb,blab,cv.COLOR_RGB2Lab);
+    cv.cvtColor(argb,alab,cv.COLOR_RGB2Lab);
 
-      changedCells = [];
+    const bd=blab.data, ad=alab.data;
+    const rgba=a.data;
+    const W=b.cols,H=b.rows;
+    const chromaThreshold=Number(chroma.value);
+    const needFrac=Number(coverage.value)/100;
 
-      const startX = getGridStart(gridOriginX, cellW);
-      const startY = getGridStart(gridOriginY, cellH);
+    let sx=originX;while(sx>0)sx-=cellW;
+    let sy=originY;while(sy>0)sy-=cellH;
 
-      const innerPadX = cellW * 0.15;
-      const innerPadY = cellH * 0.15;
+    // Небольшой внутренний отступ, чтобы граница сетки не попадала сразу в две клетки.
+    const padX=cellW*.10, padY=cellH*.10;
 
-      for (let gy = startY; gy + cellH <= h; gy += cellH) {
-        for (let gx = startX; gx + cellW <= w; gx += cellW) {
-          const sampleX = gx + innerPadX;
-          const sampleY = gy + innerPadY;
-          const sampleW = cellW - innerPadX * 2;
-          const sampleH = cellH - innerPadY * 2;
+    for(let gy=sy;gy+cellH<=H;gy+=cellH){
+      for(let gx=sx;gx+cellW<=W;gx+=cellW){
+        const x0=Math.max(0,Math.floor(gx+padX));
+        const y0=Math.max(0,Math.floor(gy+padY));
+        const x1=Math.min(W,Math.ceil(gx+cellW-padX));
+        const y1=Math.min(H,Math.ceil(gy+cellH-padY));
+        let hot=0,total=0,mean=0;
 
-          if (
-            sampleX < overlap.x0 || sampleY < overlap.y0 ||
-            sampleX + sampleW > overlap.x1 || sampleY + sampleH > overlap.y1
-          ) {
-            continue;
-          }
+        for(let y=y0;y<y1;y++){
+          for(let x=x0;x<x1;x++){
+            const pi=y*W+x;
+            const ri=pi*4;
+            // За пределами реально совмещённого фото альфа = 0.
+            if(rgba[ri+3]===0)continue;
 
-          const beforeAvg = getAverageColor(beforeData, w, h, sampleX, sampleY, sampleW, sampleH);
-          const afterAvg = getAverageColor(
-            afterData,
-            w,
-            h,
-            sampleX - offsetX,
-            sampleY - offsetY,
-            sampleW,
-            sampleH
-          );
-
-          if (!beforeAvg || !afterAvg) continue;
-
-          const ar = Math.min(255, afterAvg.r * brightnessScale);
-          const ag = Math.min(255, afterAvg.g * brightnessScale);
-          const ab = Math.min(255, afterAvg.b * brightnessScale);
-
-          const diff =
-            (Math.abs(beforeAvg.r - ar) +
-             Math.abs(beforeAvg.g - ag) +
-             Math.abs(beforeAvg.b - ab)) / 3;
-
-          if (diff >= threshold) {
-            changedCells.push({
-              x: gx,
-              y: gy,
-              w: cellW,
-              h: cellH,
-              diff: diff
-            });
+            const li=pi*3;
+            const da=bd[li+1]-ad[li+1];
+            const db=bd[li+2]-ad[li+2];
+            const d=Math.sqrt(da*da+db*db);
+            mean+=d;
+            if(d>=chromaThreshold)hot++;
+            total++;
           }
         }
-      }
+        if(total<8)continue;
+        const frac=hot/total;
+        mean/=total;
 
-      render();
-
-      setStatus('Подсчёт завершён.');
-      setResult(`
-        Результат: <strong>${changedCells.length}</strong> изменившихся клеток<br>
-        <div class="small">
-          Это примерный подсчёт новых крестиков по сравнению двух фото.
-          Если лишнего слишком много — увеличь порог или точнее совмести фото.
-        </div>
-      `);
-    }
-
-    beforeInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      beforeImg = await loadImageFromFile(file);
-      setStatus('Фото ДО загружено.');
-      prepareImages();
-    });
-
-    afterInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      afterImg = await loadImageFromFile(file);
-      setStatus('Фото ПОСЛЕ загружено.');
-      prepareImages();
-    });
-
-    calibrateBtn.addEventListener('click', () => {
-      if (!beforeImg || !afterImg) return;
-      selectingCalibration = true;
-      calibrationPoints = [];
-      changedCells = [];
-      cellW = null;
-      cellH = null;
-      gridOriginX = null;
-      gridOriginY = null;
-      countBtn.disabled = true;
-      setStatus('Кликни на фото ДО: сначала верхний левый угол участка 10×10, потом нижний правый.');
-      setResult('Результат: калибровка сброшена.');
-      render();
-    });
-
-    canvas.addEventListener('click', (e) => {
-      if (!selectingCalibration) return;
-
-      const point = canvasToImageCoords(e);
-      calibrationPoints.push(point);
-
-      if (calibrationPoints.length === 2) {
-        const p1 = calibrationPoints[0];
-        const p2 = calibrationPoints[1];
-
-        const left = Math.min(p1.x, p2.x);
-        const top = Math.min(p1.y, p2.y);
-        const width = Math.abs(p2.x - p1.x);
-        const height = Math.abs(p2.y - p1.y);
-
-        cellW = width / 10;
-        cellH = height / 10;
-        gridOriginX = left;
-        gridOriginY = top;
-
-        selectingCalibration = false;
-        countBtn.disabled = false;
-
-        if (cellW < 2 || cellH < 2) {
-          setStatus('Слишком маленькая область. Попробуй выбрать 10×10 точнее.');
-          calibrationPoints = [];
-          cellW = null;
-          cellH = null;
-          gridOriginX = null;
-          gridOriginY = null;
-          countBtn.disabled = true;
-        } else {
-          setStatus(`Калибровка готова. Размер клетки примерно ${cellW.toFixed(2)} × ${cellH.toFixed(2)} px. Теперь можно считать.`);
+        // Два условия одновременно: заметная площадь + не единичный цветовой шум.
+        if(frac>=needFrac && mean>=chromaThreshold*.28){
+          changedCells.push({x:gx,y:gy,w:cellW,h:cellH,frac,mean});
         }
       }
+    }
 
-      render();
-    });
+    render(false);
+    drawGrid();
+    drawChanges();
 
-    countBtn.addEventListener('click', countChanges);
-
-    resetBtn.addEventListener('click', () => {
-      selectingCalibration = false;
-      calibrationPoints = [];
-      changedCells = [];
-      cellW = null;
-      cellH = null;
-      gridOriginX = null;
-      gridOriginY = null;
-      countBtn.disabled = true;
-      setStatus('Калибровка и подсветка сброшены.');
-      setResult('Результат: пока ничего не посчитано.');
-      render();
-    });
-
-    offsetXInput.addEventListener('input', () => {
-      offsetX = parseInt(offsetXInput.value, 10);
-      offsetXVal.textContent = offsetX;
-      render();
-    });
-
-    offsetYInput.addEventListener('input', () => {
-      offsetY = parseInt(offsetYInput.value, 10);
-      offsetYVal.textContent = offsetY;
-      render();
-    });
-
-    thresholdInput.addEventListener('input', () => {
-      threshold = parseInt(thresholdInput.value, 10);
-      thresholdVal.textContent = threshold;
-    });
-
-    offsetXVal.textContent = offsetXInput.value;
-    offsetYVal.textContent = offsetYInput.value;
-    thresholdVal.textContent = thresholdInput.value;
-  </script>
+    result.textContent=changedCells.length;
+    resultNote.textContent='Красным отмечены клетки, которые посчитаны новыми. Если подсветка попала ровно на новые крестики — цифре можно доверять.';
+    resultCard.classList.remove('hidden');
+    say('Подсчёт завершён. Проверь красные клетки на фото.');
+  }catch(err){
+    console.error(err);
+    say('<span class="warn">Ошибка подсчёта:</span> '+(err.message||err));
+  }finally{
+    for(const m of [b,a,brgb,argb,blab,alab]){try{if(m)m.delete()}catch(e){}}
+  }
+}
+</script>
 </body>
 </html>
