@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Счётчик крестиков v3</title>
+<title>Счётчик крестиков v4</title>
 <style>
   :root{
     --bg:#f5f1f8; --card:#fff; --text:#30243d; --muted:#756982;
@@ -11,37 +11,37 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
-  .wrap{max-width:940px;margin:auto;padding:14px}
+  .wrap{max-width:960px;margin:auto;padding:14px}
   h1{font-size:26px;margin:4px 0 6px}
   .sub{color:var(--muted);font-size:14px;line-height:1.45;margin-bottom:14px}
   .card{background:var(--card);border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 4px 18px rgba(58,38,78,.07)}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .controls{display:grid;grid-template-columns:1fr;gap:12px}
+  .toolRow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .toolRow2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   label{font-weight:700;font-size:14px;display:block;margin-bottom:6px}
   input[type=file]{width:100%;background:#faf8fc;border:1px solid #ddd3e8;border-radius:12px;padding:9px}
+  input[type=range]{width:100%}
   button{width:100%;border:0;border-radius:13px;padding:13px 14px;font-size:15px;font-weight:800;background:var(--accent);color:white}
   button.secondary{background:var(--accent2);color:#523779}
   button.danger{background:#f8dfe5;color:#8a2940}
   button.success{background:#dff2e8;color:#1f6f4d}
   button.active{outline:3px solid rgba(118,81,181,.18)}
   button:disabled{opacity:.45}
+  .rangeLine{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center}
+  .val{text-align:right;font-weight:800;color:var(--accent)}
   .status{font-size:14px;line-height:1.45}
   .status b{color:var(--accent)}
-  .result{text-align:center;padding:18px}
-  .big{font-size:44px;font-weight:900;color:var(--accent);line-height:1}
   .small{font-size:12px;color:var(--muted);line-height:1.45;margin-top:6px}
   .canvasWrap{position:relative;overflow:auto;border-radius:16px;background:#ddd;max-height:75vh}
   canvas{display:block;width:100%;height:auto;touch-action:none}
-  .controls{display:grid;grid-template-columns:1fr;gap:12px}
-  .rangeLine{display:grid;grid-template-columns:1fr 54px;gap:10px;align-items:center}
-  input[type=range]{width:100%}
-  .val{text-align:right;font-weight:800;color:var(--accent)}
-  .pill{display:inline-block;background:var(--accent2);color:#5b3f83;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800;margin-right:5px}
+  .result{text-align:center;padding:18px}
+  .big{font-size:44px;font-weight:900;color:var(--accent);line-height:1}
   .hidden{display:none!important}
   .ok{color:var(--ok);font-weight:800}
   .warn{color:var(--warn);font-weight:800}
+  .pill{display:inline-block;background:var(--accent2);color:#5b3f83;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800;margin-right:5px}
   .stepTitle{font-weight:900;margin-bottom:5px}
-  .toolRow{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-  .toolRow3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
   .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
   .legend span{font-size:12px;color:var(--muted)}
   .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
@@ -60,10 +60,10 @@ var Module = {
 </head>
 <body>
 <div class="wrap">
-  <h1>🪡 Счётчик крестиков <span class="pill">v3</span></h1>
+  <h1>🪡 Счётчик крестиков <span class="pill">v4</span></h1>
   <div class="sub">
-    Сначала совмещает фото, потом находит новые крестики. После подсчёта можно
-    <b>ластиком убрать лишнее</b> или <b>кистью добавить пропущенные клетки</b>.
+    Версия <b>без 10×10</b>. После совмещения фото программа сама пытается определить сетку.
+    Если сетка чуть мимо — просто подправь ползунки <b>размер клетки</b> и <b>сдвиг сетки</b>.
   </div>
 
   <div class="card">
@@ -82,37 +82,51 @@ var Module = {
   </div>
 
   <div class="card">
-    <div class="stepTitle">2. Автоматически совмести фото</div>
-    <button id="alignBtn" disabled>✨ Автосовмещение</button>
+    <div class="stepTitle">2. Автосовмещение и автоопределение сетки</div>
+    <button id="alignBtn" disabled>✨ Совместить фото и определить сетку</button>
     <div id="alignInfo" class="small">Кнопка станет активной после загрузки двух фото.</div>
   </div>
 
   <div class="card">
-    <div class="stepTitle">3. Задай размер крестика</div>
-    <div class="small" style="margin-bottom:10px">
-      Нажми кнопку и отметь на фото <b>два угла участка ровно 10×10 крестиков</b>:
-      сначала верхний левый, затем нижний правый.
-    </div>
-    <button id="calBtn" class="secondary" disabled>▦ Выбрать участок 10×10</button>
-  </div>
-
-  <div class="card">
+    <div class="stepTitle">3. Если нужно — чуть подправь сетку</div>
     <div class="controls">
+      <div>
+        <label>Размер клетки</label>
+        <div class="rangeLine">
+          <input id="cellSize" type="range" min="4" max="30" value="10" step="0.5" disabled>
+          <div id="cellSizeVal" class="val">10</div>
+        </div>
+        <div class="small">Если сетка слишком мелкая — увеличь. Если слишком крупная — уменьши.</div>
+      </div>
+      <div class="grid">
+        <div>
+          <label>Сдвиг сетки по X</label>
+          <div class="rangeLine">
+            <input id="shiftX" type="range" min="-25" max="25" value="0" step="0.5" disabled>
+            <div id="shiftXVal" class="val">0</div>
+          </div>
+        </div>
+        <div>
+          <label>Сдвиг сетки по Y</label>
+          <div class="rangeLine">
+            <input id="shiftY" type="range" min="-25" max="25" value="0" step="0.5" disabled>
+            <div id="shiftYVal" class="val">0</div>
+          </div>
+        </div>
+      </div>
       <div>
         <label>Чувствительность к изменению цвета</label>
         <div class="rangeLine">
-          <input id="chroma" type="range" min="5" max="30" value="12" step="1">
+          <input id="chroma" type="range" min="5" max="30" value="12" step="1" disabled>
           <div id="chromaVal" class="val">12</div>
         </div>
-        <div class="small">Больше = меньше ложных срабатываний.</div>
       </div>
       <div>
         <label>Сколько клетки должно реально измениться</label>
         <div class="rangeLine">
-          <input id="coverage" type="range" min="5" max="65" value="18" step="1">
+          <input id="coverage" type="range" min="5" max="65" value="18" step="1" disabled>
           <div id="coverageVal" class="val">18%</div>
         </div>
-        <div class="small">Отсекает единичный шум и блики.</div>
       </div>
       <button id="countBtn" disabled>🧮 Посчитать новые крестики</button>
     </div>
@@ -120,18 +134,17 @@ var Module = {
 
   <div class="card">
     <div class="stepTitle">4. Ручная правка результата</div>
-    <div class="toolRow3">
+    <div class="toolRow">
       <button id="panBtn" class="secondary active" disabled>👆 Просмотр</button>
       <button id="eraseBtn" class="danger" disabled>🩹 Ластик</button>
       <button id="addBtn" class="success" disabled>➕ Добавить</button>
     </div>
-    <div class="toolRow" style="margin-top:10px">
+    <div class="toolRow2" style="margin-top:10px">
       <button id="undoBtn" class="secondary" disabled>↩️ Отменить</button>
-      <button id="resetEditsBtn" class="secondary" disabled>♻️ Сбросить ручные правки</button>
+      <button id="resetEditsBtn" class="secondary" disabled>♻️ Сбросить правки</button>
     </div>
     <div class="small" style="margin-top:10px">
-      После подсчёта включи <b>Ластик</b> и тапай по лишним красным клеткам.
-      Если что-то пропустилось — включи <b>Добавить</b> и тапни по нужному крестику.
+      После подсчёта можно тапать ластиком по лишним клеткам. Если программа что-то пропустила — добавить вручную.
     </div>
     <div class="legend">
       <span><i class="swatch" style="background:rgba(229,57,80,.40);border:1px solid rgba(229,57,80,.8)"></i>автонаходка</span>
@@ -162,24 +175,35 @@ var Module = {
 const MAX_SIDE = 1400;
 let beforeImg=null, afterImg=null;
 let aligned=false, aligning=false;
-let selecting=false, pts=[];
-let cellW=null, cellH=null, originX=null, originY=null;
-let changedCells=[];
 let toolMode='pan';
 let editHistory=[];
 let baseAutoKeys=[];
 let cellStates=new Map();
+let gridDirty=false;
+let autoPhaseX=0, autoPhaseY=0;
 
 const beforeFile=document.getElementById('beforeFile');
 const afterFile=document.getElementById('afterFile');
 const alignBtn=document.getElementById('alignBtn');
-const calBtn=document.getElementById('calBtn');
 const countBtn=document.getElementById('countBtn');
+
 const panBtn=document.getElementById('panBtn');
 const eraseBtn=document.getElementById('eraseBtn');
 const addBtn=document.getElementById('addBtn');
 const undoBtn=document.getElementById('undoBtn');
 const resetEditsBtn=document.getElementById('resetEditsBtn');
+
+const cellSizeInput=document.getElementById('cellSize');
+const shiftXInput=document.getElementById('shiftX');
+const shiftYInput=document.getElementById('shiftY');
+const chromaInput=document.getElementById('chroma');
+const coverageInput=document.getElementById('coverage');
+
+const cellSizeVal=document.getElementById('cellSizeVal');
+const shiftXVal=document.getElementById('shiftXVal');
+const shiftYVal=document.getElementById('shiftYVal');
+const chromaVal=document.getElementById('chromaVal');
+const coverageVal=document.getElementById('coverageVal');
 
 const view=document.getElementById('view');
 const vctx=view.getContext('2d',{willReadFrequently:true});
@@ -188,34 +212,47 @@ const afterCanvas=document.getElementById('afterCanvas');
 const alignedCanvas=document.getElementById('alignedCanvas');
 const bctx=beforeCanvas.getContext('2d',{willReadFrequently:true});
 const actx=afterCanvas.getContext('2d',{willReadFrequently:true});
+
 const status=document.getElementById('status');
 const alignInfo=document.getElementById('alignInfo');
 const resultCard=document.getElementById('resultCard');
 const result=document.getElementById('result');
 const resultNote=document.getElementById('resultNote');
-const chroma=document.getElementById('chroma');
-const coverage=document.getElementById('coverage');
 
 window.cvReady=false;
 
+function say(t){ status.innerHTML=t; }
+function getCellSize(){ return Number(cellSizeInput.value); }
+function getOriginX(){ return autoPhaseX + Number(shiftXInput.value); }
+function getOriginY(){ return autoPhaseY + Number(shiftYInput.value); }
+
+function updateLabels(){
+  cellSizeVal.textContent = Number(cellSizeInput.value).toFixed(1);
+  shiftXVal.textContent = Number(shiftXInput.value).toFixed(1);
+  shiftYVal.textContent = Number(shiftYInput.value).toFixed(1);
+  chromaVal.textContent = chromaInput.value;
+  coverageVal.textContent = coverageInput.value + '%';
+}
+updateLabels();
+
 function updateButtons(){
-  alignBtn.disabled=!(beforeImg && afterImg && window.cvReady) || aligning;
-  calBtn.disabled=!aligned;
-  countBtn.disabled=!(aligned && cellW && cellH);
-  const hasGrid = !!(cellW && cellH && aligned);
-  panBtn.disabled=!hasGrid;
-  eraseBtn.disabled=!hasGrid;
-  addBtn.disabled=!hasGrid;
-  undoBtn.disabled=editHistory.length===0;
-  resetEditsBtn.disabled=(cellStates.size===0);
+  alignBtn.disabled = !(beforeImg && afterImg && window.cvReady) || aligning;
+  const gridReady = aligned;
+  for(const el of [cellSizeInput,shiftXInput,shiftYInput,chromaInput,coverageInput]){
+    el.disabled = !gridReady;
+  }
+  countBtn.disabled = !gridReady;
+  panBtn.disabled = !gridReady;
+  eraseBtn.disabled = !gridReady;
+  addBtn.disabled = !gridReady;
+  undoBtn.disabled = editHistory.length===0;
+  resetEditsBtn.disabled = (cellStates.size===0);
 }
 function syncToolButtons(){
   panBtn.classList.toggle('active', toolMode==='pan');
   eraseBtn.classList.toggle('active', toolMode==='erase');
   addBtn.classList.toggle('active', toolMode==='add');
 }
-function say(t){status.innerHTML=t}
-
 function loadFile(file){
   return new Promise((resolve,reject)=>{
     const r=new FileReader();
@@ -230,12 +267,12 @@ function loadFile(file){
   });
 }
 function fitSize(w,h){
-  const s=Math.min(1,MAX_SIDE/Math.max(w,h));
-  return [Math.round(w*s),Math.round(h*s)];
+  const s=Math.min(1, MAX_SIDE/Math.max(w,h));
+  return [Math.round(w*s), Math.round(h*s)];
 }
 function prepare(){
   if(!beforeImg || !afterImg) return;
-  const [w,h]=fitSize(beforeImg.naturalWidth,beforeImg.naturalHeight);
+  const [w,h] = fitSize(beforeImg.naturalWidth, beforeImg.naturalHeight);
   beforeCanvas.width=afterCanvas.width=alignedCanvas.width=view.width=w;
   beforeCanvas.height=afterCanvas.height=alignedCanvas.height=view.height=h;
 
@@ -245,14 +282,14 @@ function prepare(){
   actx.clearRect(0,0,w,h);
   actx.drawImage(afterImg,0,0,w,h);
 
-  aligned=false; selecting=false; pts=[]; changedCells=[];
-  cellW=cellH=originX=originY=null;
-  toolMode='pan'; editHistory=[]; baseAutoKeys=[]; cellStates.clear();
+  aligned=false; aligning=false; toolMode='pan';
+  editHistory=[]; baseAutoKeys=[]; cellStates.clear();
+  autoPhaseX=0; autoPhaseY=0; gridDirty=false;
   resultCard.classList.add('hidden');
   render(false);
-  say('Фото загружены. Теперь нажми <b>«Автосовмещение»</b>.');
   syncToolButtons();
   updateButtons();
+  say('Фото загружены. Теперь нажми <b>«Совместить фото и определить сетку»</b>.');
 }
 beforeFile.addEventListener('change', async e=>{
   if(e.target.files[0]){ beforeImg = await loadFile(e.target.files[0]); prepare(); }
@@ -271,41 +308,48 @@ function render(showAligned=true){
     vctx.drawImage(alignedCanvas,0,0);
     vctx.restore();
   }
-
-  if(pts.length){
-    vctx.save();
-    vctx.fillStyle='#ff9f1c';
-    for(const p of pts){
-      vctx.beginPath(); vctx.arc(p.x,p.y,Math.max(5,view.width/160),0,Math.PI*2); vctx.fill();
-    }
-    if(pts.length===2){
-      const p1=pts[0], p2=pts[1];
-      vctx.strokeStyle='#ff9f1c';
-      vctx.lineWidth=Math.max(2,view.width/500);
-      vctx.setLineDash([10,7]);
-      vctx.strokeRect(Math.min(p1.x,p2.x),Math.min(p1.y,p2.y),Math.abs(p2.x-p1.x),Math.abs(p2.y-p1.y));
-      vctx.setLineDash([]);
-    }
-    vctx.restore();
-  }
-
-  drawGrid();
+  if(aligned) drawGrid();
   drawCellsOverlay();
 }
 
 function drawGrid(){
-  if(!cellW || !cellH) return;
-  let sx=originX; while(sx>0) sx-=cellW;
-  let sy=originY; while(sy>0) sy-=cellH;
+  const size = getCellSize();
+  if(!size) return;
+  let sx = getOriginX();
+  let sy = getOriginY();
+  while(sx > 0) sx -= size;
+  while(sy > 0) sy -= size;
   vctx.save();
-  vctx.strokeStyle='rgba(0,220,220,.28)';
+  vctx.strokeStyle='rgba(0,220,220,.26)';
   vctx.lineWidth=1;
-  for(let x=sx;x<=view.width;x+=cellW){ vctx.beginPath(); vctx.moveTo(x,0); vctx.lineTo(x,view.height); vctx.stroke(); }
-  for(let y=sy;y<=view.height;y+=cellH){ vctx.beginPath(); vctx.moveTo(0,y); vctx.lineTo(view.width,y); vctx.stroke(); }
+  for(let x=sx; x<=view.width; x+=size){ vctx.beginPath(); vctx.moveTo(x,0); vctx.lineTo(x,view.height); vctx.stroke(); }
+  for(let y=sy; y<=view.height; y+=size){ vctx.beginPath(); vctx.moveTo(0,y); vctx.lineTo(view.width,y); vctx.stroke(); }
   vctx.restore();
 }
+
+function keyForCell(col,row){ return col+'_'+row; }
+function keyToXY(key){
+  const [col,row] = key.split('_').map(Number);
+  const size = getCellSize();
+  let sx = getOriginX(); while(sx > 0) sx -= size;
+  let sy = getOriginY(); while(sy > 0) sy -= size;
+  return {x:sx + col*size, y:sy + row*size};
+}
+function getCellFromPoint(px,py){
+  const size = getCellSize();
+  let sx = getOriginX(); while(sx > 0) sx -= size;
+  let sy = getOriginY(); while(sy > 0) sy -= size;
+  const col=Math.floor((px-sx)/size);
+  const row=Math.floor((py-sy)/size);
+  if(col<0 || row<0) return null;
+  const x=sx+col*size, y=sy+row*size;
+  if(x<0 || y<0 || x+size>view.width || y+size>view.height) return null;
+  return {col,row,key:keyForCell(col,row),x,y};
+}
+
 function drawCellsOverlay(){
-  if(cellStates.size===0) return;
+  const size = getCellSize();
+  if(cellStates.size===0 || !size) return;
   for(const [key,state] of cellStates.entries()){
     const {x,y} = keyToXY(key);
     if(state==='auto'){
@@ -313,190 +357,100 @@ function drawCellsOverlay(){
       vctx.fillStyle='rgba(229,57,80,.28)';
       vctx.strokeStyle='rgba(220,25,40,.8)';
       vctx.lineWidth=1;
-      vctx.fillRect(x,y,cellW,cellH);
-      vctx.strokeRect(x,y,cellW,cellH);
+      vctx.fillRect(x,y,size,size); vctx.strokeRect(x,y,size,size);
       vctx.restore();
     } else if(state==='added'){
       vctx.save();
       vctx.fillStyle='rgba(46,204,113,.30)';
       vctx.strokeStyle='rgba(39,174,96,.95)';
       vctx.lineWidth=1.2;
-      vctx.fillRect(x,y,cellW,cellH);
-      vctx.strokeRect(x,y,cellW,cellH);
+      vctx.fillRect(x,y,size,size); vctx.strokeRect(x,y,size,size);
       vctx.restore();
     } else if(state==='erased'){
       vctx.save();
       vctx.fillStyle='rgba(145,145,145,.25)';
       vctx.strokeStyle='rgba(110,110,110,.9)';
       vctx.lineWidth=1;
-      vctx.fillRect(x,y,cellW,cellH);
-      vctx.strokeRect(x,y,cellW,cellH);
+      vctx.fillRect(x,y,size,size); vctx.strokeRect(x,y,size,size);
       vctx.beginPath();
-      vctx.moveTo(x+2,y+2); vctx.lineTo(x+cellW-2,y+cellH-2);
-      vctx.moveTo(x+cellW-2,y+2); vctx.lineTo(x+2,y+cellH-2);
+      vctx.moveTo(x+2,y+2); vctx.lineTo(x+size-2,y+size-2);
+      vctx.moveTo(x+size-2,y+2); vctx.lineTo(x+2,y+size-2);
       vctx.stroke();
       vctx.restore();
     }
   }
 }
 
-function keyForCell(col,row){ return col + '_' + row; }
-function keyToXY(key){
-  const [col,row] = key.split('_').map(Number);
-  let sx=originX; while(sx>0) sx-=cellW;
-  let sy=originY; while(sy>0) sy-=cellH;
-  return {x:sx + col*cellW, y:sy + row*cellH};
-}
-function getCellFromPoint(px,py){
-  if(!cellW || !cellH) return null;
-  let sx=originX; while(sx>0) sx-=cellW;
-  let sy=originY; while(sy>0) sy-=cellH;
-  const col=Math.floor((px - sx)/cellW);
-  const row=Math.floor((py - sy)/cellH);
-  if(col<0 || row<0) return null;
-  const x=sx + col*cellW, y=sy + row*cellH;
-  if(x<0 || y<0 || x+cellW>view.width || y+cellH>view.height) return null;
-  return {col,row,key:keyForCell(col,row),x,y};
-}
 function updateResult(){
   let n=0;
   for(const state of cellStates.values()){
     if(state==='auto' || state==='added') n++;
   }
-  result.textContent=n;
+  result.textContent = n;
   resultCard.classList.remove('hidden');
-  resultNote.innerHTML='Ластиком убираются лишние клетки, зелёным можно добавить пропущенные. Серые клетки в итог <b>не входят</b>.';
+  resultNote.innerHTML = 'Если сетка или подсчёт мимо — подправь <b>размер клетки</b>, пересчитай, а потом убери лишнее ластиком.';
   updateButtons();
 }
 
-alignBtn.addEventListener('click', autoAlign);
-
-async function autoAlign(){
-  if(!window.cvReady || !beforeImg || !afterImg || aligning) return;
-  aligning=true; updateButtons();
-  alignBtn.textContent='Совмещаю…';
-  say('Ищу одинаковые детали на двух фото…');
-
-  let before=null, after=null, g1=null, g2=null, orb=null, kp1=null, kp2=null, d1=null, d2=null;
-  let matcher=null, matches=null, srcPts=null, dstPts=null, H=null, warped=null;
-  try{
-    before=cv.imread(beforeCanvas);
-    after=cv.imread(afterCanvas);
-    g1=new cv.Mat(); g2=new cv.Mat();
-    cv.cvtColor(before,g1,cv.COLOR_RGBA2GRAY);
-    cv.cvtColor(after,g2,cv.COLOR_RGBA2GRAY);
-
-    orb=new cv.ORB(5000);
-    kp1=new cv.KeyPointVector(); kp2=new cv.KeyPointVector();
-    d1=new cv.Mat(); d2=new cv.Mat();
-    const noMask=new cv.Mat();
-    orb.detectAndCompute(g1,noMask,kp1,d1);
-    orb.detectAndCompute(g2,noMask,kp2,d2);
-    noMask.delete();
-
-    if(d1.empty() || d2.empty()) throw new Error('Не удалось найти достаточно деталей на фото.');
-
-    matcher=new cv.BFMatcher(cv.NORM_HAMMING,false);
-    matches=new cv.DMatchVectorVector();
-    matcher.knnMatch(d2,d1,matches,2);
-
-    const src=[], dst=[];
-    for(let i=0;i<matches.size();i++){
-      const pair=matches.get(i);
-      if(pair.size()>=2){
-        const m=pair.get(0), n=pair.get(1);
-        if(m.distance < 0.72 * n.distance){
-          const pAfter=kp2.get(m.queryIdx).pt;
-          const pBefore=kp1.get(m.trainIdx).pt;
-          src.push(pAfter.x,pAfter.y);
-          dst.push(pBefore.x,pBefore.y);
-        }
-      }
-      pair.delete();
-    }
-    if(src.length/2 < 18) throw new Error('Нашлось слишком мало надёжных совпадений.');
-
-    srcPts=cv.matFromArray(src.length/2,1,cv.CV_32FC2,src);
-    dstPts=cv.matFromArray(dst.length/2,1,cv.CV_32FC2,dst);
-    H=cv.findHomography(srcPts,dstPts,cv.RANSAC,4.0);
-    if(H.empty()) throw new Error('Не получилось вычислить перспективу.');
-
-    warped=new cv.Mat();
-    const size=new cv.Size(before.cols,before.rows);
-    cv.warpPerspective(after,warped,H,size,cv.INTER_LINEAR,cv.BORDER_CONSTANT,new cv.Scalar(0,0,0,0));
-    cv.imshow(alignedCanvas,warped);
-
-    aligned=true; changedCells=[]; pts=[];
-    cellW=cellH=originX=originY=null;
-    toolMode='pan'; editHistory=[]; baseAutoKeys=[]; cellStates.clear();
-    render(true);
-    alignInfo.innerHTML='<span class="ok">✓ Фото автоматически совмещены.</span>';
-    say('Готово. Теперь задай участок <b>10×10 крестиков</b>.');
-    syncToolButtons();
-  }catch(err){
-    console.error(err);
-    aligned=false;
-    say('<span class="warn">Не удалось автоматически совместить:</span> ' + (err.message || err));
-    alignInfo.textContent='Попробуй фото с более похожим ракурсом и большим общим участком.';
-  }finally{
-    for(const m of [before,after,g1,g2,d1,d2,srcPts,dstPts,H,warped]){
-      try{ if(m) m.delete(); }catch(e){}
-    }
-    try{ if(kp1) kp1.delete(); }catch(e){}
-    try{ if(kp2) kp2.delete(); }catch(e){}
-    try{ if(orb) orb.delete(); }catch(e){}
-    try{ if(matcher) matcher.delete(); }catch(e){}
-    try{ if(matches) matches.delete(); }catch(e){}
-    aligning=false;
-    alignBtn.textContent='✨ Автосовмещение';
+function invalidateCount(msg){
+  if(cellStates.size || baseAutoKeys.length){
+    cellStates.clear();
+    baseAutoKeys=[];
+    editHistory=[];
+    resultCard.classList.add('hidden');
+    if(msg) say(msg);
     updateButtons();
   }
+  render(true);
 }
 
-calBtn.addEventListener('click', ()=>{
-  if(!aligned) return;
-  selecting=true; pts=[]; changedCells=[];
-  cellW=cellH=originX=originY=null;
-  toolMode='pan'; editHistory=[]; baseAutoKeys=[]; cellStates.clear();
-  resultCard.classList.add('hidden');
-  say('Отметь на фото <b>верхний левый</b> и <b>нижний правый</b> угол участка ровно 10×10 крестиков.');
-  render(true); syncToolButtons(); updateButtons();
+for(const el of [cellSizeInput, shiftXInput, shiftYInput]){
+  el.addEventListener('input', ()=>{
+    updateLabels();
+    gridDirty = true;
+    invalidateCount('Сетка изменена. Если хочешь новый результат — нажми <b>«Посчитать новые крестики»</b> ещё раз.');
+  });
+}
+for(const el of [chromaInput, coverageInput]){
+  el.addEventListener('input', ()=>{
+    updateLabels();
+    invalidateCount('Параметры подсчёта изменены. Нажми <b>«Посчитать новые крестики»</b> заново.');
+  });
+}
+
+panBtn.addEventListener('click', ()=>{ toolMode='pan'; syncToolButtons(); say('Режим просмотра.'); });
+eraseBtn.addEventListener('click', ()=>{ toolMode='erase'; syncToolButtons(); say('Режим <b>Ластик</b>: тапай по лишним клеткам.'); });
+addBtn.addEventListener('click', ()=>{ toolMode='add'; syncToolButtons(); say('Режим <b>Добавить</b>: тапай по клеткам, которые нужно включить в счёт.'); });
+
+undoBtn.addEventListener('click', ()=>{
+  const last=editHistory.pop();
+  if(!last) return;
+  if(last.prev===null) cellStates.delete(last.key);
+  else cellStates.set(last.key,last.prev);
+  render(false);
+  updateResult();
+});
+resetEditsBtn.addEventListener('click', ()=>{
+  editHistory=[];
+  cellStates.clear();
+  for(const key of baseAutoKeys) cellStates.set(key,'auto');
+  render(false);
+  updateResult();
 });
 
 function eventPoint(e){
   const r=view.getBoundingClientRect();
-  const x=(e.clientX-r.left) * view.width / r.width;
-  const y=(e.clientY-r.top) * view.height / r.height;
-  return {x,y};
+  return {
+    x:(e.clientX-r.left)*view.width/r.width,
+    y:(e.clientY-r.top)*view.height/r.height
+  };
 }
-
 view.addEventListener('pointerup', e=>{
-  const p=eventPoint(e);
-
-  if(selecting){
-    pts.push(p);
-    if(pts.length===2){
-      const a=pts[0], b=pts[1];
-      const left=Math.min(a.x,b.x), top=Math.min(a.y,b.y);
-      cellW=Math.abs(b.x-a.x)/10;
-      cellH=Math.abs(b.y-a.y)/10;
-      originX=left; originY=top;
-      selecting=false;
-      if(cellW<4 || cellH<4){
-        cellW=cellH=originX=originY=null; pts=[];
-        say('<span class="warn">Область слишком маленькая.</span> Выбери 10×10 ещё раз.');
-      }else{
-        say('Калибровка готова. Теперь жми <b>«Посчитать новые крестики»</b>.');
-      }
-    }
-    render(true); updateButtons();
-    return;
-  }
-
-  if(toolMode==='pan' || !cellW || !cellH) return;
-  const cell=getCellFromPoint(p.x,p.y);
+  if(toolMode==='pan' || !aligned) return;
+  const p = eventPoint(e);
+  const cell = getCellFromPoint(p.x,p.y);
   if(!cell) return;
-  const prev=cellStates.get(cell.key) || null;
+  const prev = cellStates.get(cell.key) || null;
 
   if(toolMode==='erase'){
     if(prev==='auto' || prev==='added'){
@@ -531,65 +485,225 @@ view.addEventListener('pointerup', e=>{
   updateResult();
 });
 
-panBtn.addEventListener('click', ()=>{ toolMode='pan'; syncToolButtons(); say('Режим просмотра.'); });
-eraseBtn.addEventListener('click', ()=>{ toolMode='erase'; syncToolButtons(); say('Режим <b>Ластик</b>: тапай по лишним клеткам.'); });
-addBtn.addEventListener('click', ()=>{ toolMode='add'; syncToolButtons(); say('Режим <b>Добавить</b>: тапай по клеткам, которые нужно включить в счёт.'); });
+alignBtn.addEventListener('click', autoAlignAndGrid);
 
-undoBtn.addEventListener('click', ()=>{
-  const last=editHistory.pop();
-  if(!last) return;
-  if(last.prev===null) cellStates.delete(last.key);
-  else cellStates.set(last.key,last.prev);
-  render(false);
-  updateResult();
-});
+async function autoAlignAndGrid(){
+  if(!window.cvReady || !beforeImg || !afterImg || aligning) return;
+  aligning=true; updateButtons();
+  alignBtn.textContent='Совмещаю…';
+  say('Совмещаю фото по вышивке…');
 
-resetEditsBtn.addEventListener('click', ()=>{
-  editHistory=[];
-  cellStates.clear();
-  for(const key of baseAutoKeys) cellStates.set(key,'auto');
-  render(false);
-  updateResult();
-});
+  let before=null, after=null, g1=null, g2=null, orb=null, kp1=null, kp2=null, d1=null, d2=null;
+  let matcher=null, matches=null, srcPts=null, dstPts=null, H=null, warped=null;
+  try{
+    before=cv.imread(beforeCanvas);
+    after=cv.imread(afterCanvas);
+    g1=new cv.Mat(); g2=new cv.Mat();
+    cv.cvtColor(before,g1,cv.COLOR_RGBA2GRAY);
+    cv.cvtColor(after,g2,cv.COLOR_RGBA2GRAY);
 
-chroma.addEventListener('input', ()=>document.getElementById('chromaVal').textContent=chroma.value);
-coverage.addEventListener('input', ()=>document.getElementById('coverageVal').textContent=coverage.value+'%');
+    orb=new cv.ORB(5000);
+    kp1=new cv.KeyPointVector(); kp2=new cv.KeyPointVector();
+    d1=new cv.Mat(); d2=new cv.Mat();
+    const noMask = new cv.Mat();
+    orb.detectAndCompute(g1,noMask,kp1,d1);
+    orb.detectAndCompute(g2,noMask,kp2,d2);
+    noMask.delete();
+
+    if(d1.empty() || d2.empty()) throw new Error('Не удалось найти достаточно деталей на фото.');
+
+    matcher=new cv.BFMatcher(cv.NORM_HAMMING,false);
+    matches=new cv.DMatchVectorVector();
+    matcher.knnMatch(d2,d1,matches,2);
+
+    const src=[], dst=[];
+    for(let i=0;i<matches.size();i++){
+      const pair=matches.get(i);
+      if(pair.size()>=2){
+        const m=pair.get(0), n=pair.get(1);
+        if(m.distance < 0.72*n.distance){
+          const pAfter=kp2.get(m.queryIdx).pt;
+          const pBefore=kp1.get(m.trainIdx).pt;
+          src.push(pAfter.x,pAfter.y);
+          dst.push(pBefore.x,pBefore.y);
+        }
+      }
+      pair.delete();
+    }
+    if(src.length/2 < 18) throw new Error('Нашлось слишком мало совпадений.');
+
+    srcPts=cv.matFromArray(src.length/2,1,cv.CV_32FC2,src);
+    dstPts=cv.matFromArray(dst.length/2,1,cv.CV_32FC2,dst);
+    H=cv.findHomography(srcPts,dstPts,cv.RANSAC,4.0);
+    if(H.empty()) throw new Error('Не получилось вычислить перспективу.');
+
+    warped=new cv.Mat();
+    const size=new cv.Size(before.cols,before.rows);
+    cv.warpPerspective(after,warped,H,size,cv.INTER_LINEAR,cv.BORDER_CONSTANT,new cv.Scalar(0,0,0,0));
+    cv.imshow(alignedCanvas,warped);
+
+    aligned=true;
+    editHistory=[]; baseAutoKeys=[]; cellStates.clear();
+    toolMode='pan';
+    syncToolButtons();
+
+    const estimate = estimateGrid(beforeCanvas);
+    cellSizeInput.value = clamp(estimate.size, 4, 30);
+    autoPhaseX = estimate.phaseX;
+    autoPhaseY = estimate.phaseY;
+    shiftXInput.value = 0;
+    shiftYInput.value = 0;
+    gridDirty=false;
+
+    updateLabels();
+    render(true);
+    alignInfo.innerHTML = '<span class="ok">✓ Фото совмещены. Сетка определена автоматически.</span>';
+    say('Готово. Если сетка легла нормально — жми <b>«Посчитать новые крестики»</b>. Если чуть мимо — подправь ползунки.');
+  }catch(err){
+    console.error(err);
+    aligned=false;
+    say('<span class="warn">Не удалось обработать фото:</span> ' + (err.message || err));
+    alignInfo.textContent='Попробуй фото с более похожим ракурсом и большим общим участком.';
+  }finally{
+    for(const m of [before,after,g1,g2,d1,d2,srcPts,dstPts,H,warped]){
+      try{ if(m) m.delete(); }catch(e){}
+    }
+    try{ if(kp1) kp1.delete(); }catch(e){}
+    try{ if(kp2) kp2.delete(); }catch(e){}
+    try{ if(orb) orb.delete(); }catch(e){}
+    try{ if(matcher) matcher.delete(); }catch(e){}
+    try{ if(matches) matches.delete(); }catch(e){}
+    aligning=false;
+    alignBtn.textContent='✨ Совместить фото и определить сетку';
+    updateButtons();
+  }
+}
+
+function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+// Оценка размера клетки по периодичности ткани/стежков на фото ДО.
+function estimateGrid(canvas){
+  const ctx = canvas.getContext('2d', {willReadFrequently:true});
+  const W = canvas.width, H = canvas.height;
+  const cropX = Math.floor(W*0.18), cropY = Math.floor(H*0.14);
+  const cropW = Math.floor(W*0.64), cropH = Math.floor(H*0.58);
+  const img = ctx.getImageData(cropX,cropY,cropW,cropH).data;
+
+  const profX = new Array(cropW).fill(0);
+  const profY = new Array(cropH).fill(0);
+
+  function grayAt(x,y){
+    const i = (y*cropW + x) * 4;
+    return 0.299*img[i] + 0.587*img[i+1] + 0.114*img[i+2];
+  }
+
+  // Энергия изменения по колонкам / строкам.
+  for(let x=1;x<cropW;x++){
+    let sum=0;
+    for(let y=0;y<cropH;y+=2){
+      sum += Math.abs(grayAt(x,y) - grayAt(x-1,y));
+    }
+    profX[x]=sum;
+  }
+  for(let y=1;y<cropH;y++){
+    let sum=0;
+    for(let x=0;x<cropW;x+=2){
+      sum += Math.abs(grayAt(x,y) - grayAt(x,y-1));
+    }
+    profY[y]=sum;
+  }
+
+  function smooth(arr){
+    const out = arr.slice();
+    for(let i=2;i<arr.length-2;i++){
+      out[i] = (arr[i-2]+arr[i-1]+arr[i]+arr[i+1]+arr[i+2])/5;
+    }
+    return out;
+  }
+  const sx = smooth(profX);
+  const sy = smooth(profY);
+
+  function bestLag(arr){
+    let bestLag = 10, best = -Infinity;
+    const minLag=4, maxLag=Math.min(24, Math.floor(arr.length/3));
+    for(let lag=minLag; lag<=maxLag; lag++){
+      let s=0, n=0;
+      for(let i=0; i<arr.length-lag; i++){
+        s += arr[i]*arr[i+lag];
+        n++;
+      }
+      s /= Math.max(1,n);
+      // небольшой бонус средним лагам
+      s *= (1 + lag*0.01);
+      if(s > best){ best = s; bestLag = lag; }
+    }
+    // если поймали период нитей, а не крестика — удвоим
+    if(bestLag < 8) bestLag *= 2;
+    return bestLag;
+  }
+
+  const lagX = bestLag(sx);
+  const lagY = bestLag(sy);
+  const size = (lagX + lagY) / 2;
+
+  function bestPhase(arr, lag){
+    let bestP=0, best=-Infinity;
+    for(let p=0;p<Math.round(lag);p++){
+      let s=0, n=0;
+      for(let i=p; i<arr.length; i+=lag){
+        s += arr[Math.round(i)];
+        n++;
+      }
+      s /= Math.max(1,n);
+      if(s>best){ best=s; bestP=p; }
+    }
+    return bestP;
+  }
+
+  const phaseX = cropX + bestPhase(sx, lagX);
+  const phaseY = cropY + bestPhase(sy, lagY);
+
+  return {size, phaseX, phaseY};
+}
 
 countBtn.addEventListener('click', countChanges);
 
 function countChanges(){
-  if(!aligned || !cellW || !cellH) return;
+  if(!aligned) return;
   say('Сравниваю клетки после автосовмещения…');
-  changedCells=[]; editHistory=[]; baseAutoKeys=[]; cellStates.clear();
+  baseAutoKeys=[]; cellStates.clear(); editHistory=[];
 
   let b=null, a=null, brgb=null, argb=null, blab=null, alab=null;
   try{
-    b=cv.imread(beforeCanvas);
-    a=cv.imread(alignedCanvas);
+    const cellSize = getCellSize();
+    const originX = getOriginX();
+    const originY = getOriginY();
+
+    b = cv.imread(beforeCanvas);
+    a = cv.imread(alignedCanvas);
     brgb=new cv.Mat(); argb=new cv.Mat(); blab=new cv.Mat(); alab=new cv.Mat();
     cv.cvtColor(b,brgb,cv.COLOR_RGBA2RGB);
     cv.cvtColor(a,argb,cv.COLOR_RGBA2RGB);
     cv.cvtColor(brgb,blab,cv.COLOR_RGB2Lab);
     cv.cvtColor(argb,alab,cv.COLOR_RGB2Lab);
 
-    const bd=blab.data, ad=alab.data;
-    const rgba=a.data;
+    const bd=blab.data, ad=alab.data, rgba=a.data;
     const W=b.cols, H=b.rows;
-    const chromaThreshold=Number(chroma.value);
-    const needFrac=Number(coverage.value)/100;
+    const chromaThreshold=Number(chromaInput.value);
+    const needFrac=Number(coverageInput.value)/100;
 
-    let sx=originX; while(sx>0) sx-=cellW;
-    let sy=originY; while(sy>0) sy-=cellH;
-    const padX=cellW*.10, padY=cellH*.10;
+    let sx=originX; while(sx>0) sx-=cellSize;
+    let sy=originY; while(sy>0) sy-=cellSize;
+    const pad = cellSize*0.10;
 
-    for(let gy=sy,row=0; gy+cellH<=H; gy+=cellH,row++){
-      for(let gx=sx,col=0; gx+cellW<=W; gx+=cellW,col++){
-        const x0=Math.max(0,Math.floor(gx+padX));
-        const y0=Math.max(0,Math.floor(gy+padY));
-        const x1=Math.min(W,Math.ceil(gx+cellW-padX));
-        const y1=Math.min(H,Math.ceil(gy+cellH-padY));
-
+    for(let gy=sy,row=0; gy+cellSize<=H; gy+=cellSize,row++){
+      for(let gx=sx,col=0; gx+cellSize<=W; gx+=cellSize,col++){
+        const x0=Math.max(0,Math.floor(gx+pad));
+        const y0=Math.max(0,Math.floor(gy+pad));
+        const x1=Math.min(W,Math.ceil(gx+cellSize-pad));
+        const y1=Math.min(H,Math.ceil(gy+cellSize-pad));
         let hot=0,total=0,mean=0;
+
         for(let y=y0; y<y1; y++){
           for(let x=x0; x<x1; x++){
             const pi=y*W+x;
@@ -600,18 +714,17 @@ function countChanges(){
             const da=bd[li+1]-ad[li+1];
             const db=bd[li+2]-ad[li+2];
             const d=Math.sqrt(da*da + db*db);
-            mean+=d;
-            if(d>=chromaThreshold) hot++;
+            mean += d;
+            if(d >= chromaThreshold) hot++;
             total++;
           }
         }
-        if(total<8) continue;
-        const frac=hot/total;
-        mean/=total;
+        if(total < 8) continue;
+        const frac = hot/total;
+        mean /= total;
 
-        if(frac>=needFrac && mean>=chromaThreshold*.28){
-          const key=keyForCell(col,row);
-          changedCells.push({x:gx,y:gy,w:cellW,h:cellH,frac,mean,key,col,row});
+        if(frac >= needFrac && mean >= chromaThreshold*0.28){
+          const key = keyForCell(col,row);
           baseAutoKeys.push(key);
           cellStates.set(key,'auto');
         }
@@ -620,9 +733,10 @@ function countChanges(){
 
     render(false);
     updateResult();
-    say('Подсчёт завершён. Теперь можно <b>ластиком убрать лишнее</b> или <b>добавить пропущенное</b>.');
     toolMode='erase';
     syncToolButtons();
+    gridDirty=false;
+    say('Подсчёт завершён. Теперь можно <b>ластиком убрать лишнее</b> или <b>добавить пропущенное</b>.');
   }catch(err){
     console.error(err);
     say('<span class="warn">Ошибка подсчёта:</span> ' + (err.message || err));
